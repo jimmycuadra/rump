@@ -10,17 +10,7 @@ fn main() {
     let program = CLI::new();
 
     match program.run(args.tail()) {
-        Ok(result) => match result {
-            Some(output) => println!("{}", output),
-            None => {}
-        },
-        Err(error) => {
-            match error {
-                Some(error_message) => println!("{}", error_message),
-                None => {}
-            }
-
-            os::set_exit_status(1);
-        }
+        Some(output) => println!("{}", output),
+        None => {}
     }
 }

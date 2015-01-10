@@ -1,3 +1,5 @@
+use std::os;
+
 use getopts;
 
 use commands;
@@ -23,42 +25,43 @@ impl CLI {
         }
     }
 
-    pub fn run(&self, args: &[String]) -> Result<Option<String>, Option<String>> {
+    pub fn run(&self, args: &[String]) -> Option<String> {
         let options = match getopts::getopts(args, self.flags.as_slice()) {
             Ok(m) => m,
             Err(failure) => {
-                return Err(Some(failure.to_err_msg()));
+                os::set_exit_status(1);
+                return Some(failure.to_err_msg());
             }
         };
 
         if options.opt_present("help") {
-            return Ok(Some(self.help.clone()));
+            return Some(self.help.clone());
         } else if options.opt_present("version") {
-            return Ok(Some(commands::version()));
+            return Some(commands::version());
         } else if options.opt_present("delete") {
             match options.opt_str("delete") {
                 Some(key) => {
                     commands::delete(key.as_slice());
-                    return Ok(None);
+                    return None;
                 },
-                None => return Err(Some("Cannot delete without a key.".to_string()))
+                None => return Some("Cannot delete without a key.".to_string())
             }
         }
 
         match options.free.as_slice() {
             [ref key, ref value] => {
                 commands::set(key.as_slice(), value.as_slice());
-                return Ok(None);
+                return None;
             }
             [ref key] => {
                 let result = commands::get(key.as_slice());
 
                 match result {
-                    Some(value) => return Ok(Some(value)),
-                    None => return Ok(None)
+                    Some(value) => return Some(value),
+                    None => return None
                 }
             }
-            _ => return Ok(Some(self.help.clone()))
+            _ => return Some(self.help.clone())
         }
     }
 }
