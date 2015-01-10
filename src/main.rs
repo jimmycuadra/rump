@@ -2,15 +2,8 @@
 
 extern crate rump;
 
-use std::os;
-use rump::cli::CLI;
+use rump::cli;
 
 fn main() {
-    let args = os::args();
-    let program = CLI::new();
-
-    match program.run(args.tail()) {
-        Some(output) => println!("{}", output),
-        None => {}
-    }
+    cli::run();
 }

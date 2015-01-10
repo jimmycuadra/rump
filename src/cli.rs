@@ -4,7 +4,7 @@ use getopts;
 
 use commands;
 
-pub struct CLI {
+struct CLI {
     flags: Vec<getopts::OptGroup>,
     help: String
 }
@@ -63,5 +63,15 @@ impl CLI {
             }
             _ => return Some(self.help.clone())
         }
+    }
+}
+
+pub fn run() {
+    let args = os::args();
+    let program = CLI::new();
+
+    match program.run(args.tail()) {
+        Some(output) => println!("{}", output),
+        None => {}
     }
 }
