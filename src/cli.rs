@@ -15,10 +15,7 @@ impl CLI {
             getopts::optopt("d", "delete", "delete the specified key", "KEY")
         ];
 
-        let help = format!(
-            "{}",
-            getopts::usage("Usage: rump [OPTIONS] [KEY] [VALUE]", flags.as_slice())
-        );
+        let help = getopts::usage("Usage: rump [OPTIONS] [KEY] [VALUE]", flags.as_slice());
 
         CLI {
             flags: flags,
