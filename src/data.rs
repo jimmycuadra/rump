@@ -1,6 +1,6 @@
 use rustc_serialize::json;
 use std::collections::HashMap;
-use std::io::File;
+use std::old_io::File;
 use std::os;
 
 pub fn load() -> HashMap<String, String> {
