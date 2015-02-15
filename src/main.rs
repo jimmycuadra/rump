@@ -1,5 +1,3 @@
-#![allow(unstable)]
-
 extern crate rump;
 
 use rump::cli;

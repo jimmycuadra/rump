@@ -1,60 +1,60 @@
-use std::os;
+use std::env;
 
 use getopts;
 
 use commands;
 
 struct CLI {
-    flags: Vec<getopts::OptGroup>,
+    options: getopts::Options,
     help: String
 }
 
 impl CLI {
     pub fn new() -> CLI {
-        let flags = vec![
-            getopts::optflag("h", "help", "output usage information"),
-            getopts::optflag("v", "version", "output the version number"),
-            getopts::optopt("d", "delete", "delete the specified key", "KEY")
-        ];
+        let mut options = getopts::Options::new();
 
-        let help = getopts::usage("Usage: rump [OPTIONS] [KEY] [VALUE]", flags.as_slice());
+        options.optflag("h", "help", "output usage information");
+        options.optflag("v", "version", "output the version number");
+        options.optopt("d", "delete", "delete the specified key", "KEY");
+
+        let help = options.usage("Usage: rump [OPTIONS] [KEY] [VALUE]");
 
         CLI {
-            flags: flags,
+            options: options,
             help: help
         }
     }
 
     pub fn run(&self, args: &[String]) -> Option<String> {
-        let options = match getopts::getopts(args, self.flags.as_slice()) {
+        let parsed_options = match self.options.parse(args) {
             Ok(m) => m,
             Err(failure) => {
-                os::set_exit_status(1);
+                env::set_exit_status(1);
                 return Some(failure.to_err_msg());
             }
         };
 
-        if options.opt_present("help") {
+        if parsed_options.opt_present("help") {
             return Some(self.help.clone());
-        } else if options.opt_present("version") {
+        } else if parsed_options.opt_present("version") {
             return Some(commands::version());
-        } else if options.opt_present("delete") {
-            match options.opt_str("delete") {
+        } else if parsed_options.opt_present("delete") {
+            match parsed_options.opt_str("delete") {
                 Some(key) => {
-                    commands::delete(key.as_slice());
+                    commands::delete(&key[]);
                     return None;
                 },
                 None => return Some("Cannot delete without a key.".to_string())
             }
         }
 
-        match options.free.as_slice() {
+        match &parsed_options.free[] {
             [ref key, ref value] => {
-                commands::set(key.as_slice(), value.as_slice());
+                commands::set(&key[], &value[]);
                 return None;
             }
             [ref key] => {
-                let result = commands::get(key.as_slice());
+                let result = commands::get(&key[]);
 
                 match result {
                     Some(value) => return Some(value),
@@ -67,7 +67,7 @@ impl CLI {
 }
 
 pub fn run() {
-    let args = os::args();
+    let args: Vec<String> = env::args().collect();
     let program = CLI::new();
 
     match program.run(args.tail()) {
