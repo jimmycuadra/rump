@@ -25,53 +25,54 @@ impl CLI {
         }
     }
 
-    pub fn run(&self, args: &[String]) -> Option<String> {
-        let parsed_options = match self.options.parse(args) {
-            Ok(m) => m,
-            Err(failure) => {
-                env::set_exit_status(1);
-                return Some(failure.to_err_msg());
-            }
-        };
+    pub fn run(&self, args: &[String]) -> Result<Option<String>, getopts::Fail> {
+        let parsed_options = try!(self.options.parse(args));
 
         if parsed_options.opt_present("help") {
-            return Some(self.help.clone());
+            return Ok(Some(self.help.clone()));
         } else if parsed_options.opt_present("version") {
-            return Some(commands::version());
+            return Ok(Some(commands::version()));
         } else if parsed_options.opt_present("delete") {
             match parsed_options.opt_str("delete") {
                 Some(key) => {
-                    commands::delete(&key[]);
-                    return None;
+                    commands::delete(&key[..]);
+
+                    return Ok(None);
                 },
-                None => return Some("Cannot delete without a key.".to_string())
+                None => return Ok(Some("Cannot delete without a key.".to_string())),
             }
         }
 
-        match &parsed_options.free[] {
-            [ref key, ref value] => {
-                commands::set(&key[], &value[]);
-                return None;
-            }
-            [ref key] => {
-                let result = commands::get(&key[]);
 
-                match result {
-                    Some(value) => return Some(value),
-                    None => return None
+        match parsed_options.free.len() {
+            2 => {
+                commands::set(&parsed_options.free[0], &parsed_options.free[1]);
+
+                Ok(None)
+            },
+            1 => {
+                match commands::get(&parsed_options.free[0]) {
+                    Some(value) => Ok(Some(value)),
+                    None => Ok(None),
                 }
-            }
-            _ => return Some(self.help.clone())
+            },
+            _ => Ok(Some(self.help.clone())),
         }
     }
 }
 
-pub fn run() {
-    let args: Vec<String> = env::args().collect();
+pub fn run() -> Result<(), getopts::Fail> {
+    let args: Vec<String> = env::args().skip(1).collect();
     let program = CLI::new();
 
-    match program.run(args.tail()) {
-        Some(output) => println!("{}", output),
-        None => {}
+    match program.run(&args) {
+        Ok(option) => {
+            if option.is_some() {
+                println!("{}", option.unwrap());
+            }
+
+            Ok(())
+        },
+        Err(error) => Err(error),
     }
 }

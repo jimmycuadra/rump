@@ -1,26 +1,33 @@
 use rustc_serialize::json;
 use std::collections::HashMap;
-use std::old_io::File;
 use std::env;
+use std::fs::File;
+use std::io::{Read, Write};
+use std::path::PathBuf;
 
 pub fn load() -> HashMap<String, String> {
-    let data = match File::open(&data_file_path()).read_to_string() {
-        Ok(contents) => contents,
-        Err(_) => "{}".to_string()
+    let mut data = String::new();
+
+    match File::open(&data_file_path()) {
+        Ok(mut file) => {
+            file.read_to_string(&mut data).unwrap();
+        },
+        _ => {
+            data.push_str("{}");
+        }
     };
 
-    json::decode(&data[]).unwrap()
+    json::decode(&data[..]).unwrap()
 }
 
 pub fn save(rump_data: HashMap<String, String>) {
     let data = json::encode(&rump_data).unwrap();
-
-    File::create(&data_file_path()).write_str(&data).ok();
+    let mut file = File::create(&data_file_path()).unwrap();
+    write!(&mut file, "{}", data).unwrap();
 }
 
-fn data_file_path() -> Path {
-    let home = env::home_dir().unwrap();
-    let mut path = Path::new(home);
-    path.push(".rump");
-    path
+fn data_file_path() -> PathBuf {
+    let mut home = env::home_dir().unwrap();
+    home.push(".rump");
+    home
 }
